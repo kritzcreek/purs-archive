@@ -1,0 +1,9 @@
+# Get Home
+
+GET http://localhost:3000
+
+# Post a file
+
+POST http://localhost:3000/upload# File upload
+Content-type: multipart/form-data 
+< manifest.toml

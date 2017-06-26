@@ -1,0 +1,35 @@
+name: purs-archive
+version: 1.0.0
+synopsis: LUL
+description: LUL
+maintainer: LUL
+license: MIT
+github: kRITZCREEK/LUL
+category: Development
+extra-source-files:
+  - CHANGELOG.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - scotty
+  - protolude
+  - unordered-containers
+  - htoml
+  - bytestring
+  - aeson
+
+default-extensions:
+  - OverloadedStrings
+  - NoImplicitPrelude
+
+library:
+  source-dirs: src
+
+executables:
+  purs-archive:
+    main: Main.hs
+    source-dirs: app
+    ghc-options: -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
+    dependencies:
+      - purs-archive
+      - wai-extra
