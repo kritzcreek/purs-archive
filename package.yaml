@@ -33,3 +33,14 @@ executables:
     dependencies:
       - purs-archive
       - wai-extra
+
+tests:
+  spec:
+    main: "Spec.hs"
+    ghc-options: "-threaded -O0"
+    source-dirs:
+      - src
+      - test
+
+    dependencies:
+      - hspec >= 2.1.8
