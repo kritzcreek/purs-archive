@@ -1,8 +1,10 @@
+{-# LANGUAGE RecordWildCards #-}
 module Manifest where
 
 import Protolude
 import Data.Aeson as Aeson
 import Data.Aeson.Types (parseMaybe)
+import qualified Data.Text as Text
 import qualified Text.Toml as Toml
 import qualified Data.HashMap.Strict as HM
 
@@ -31,3 +33,17 @@ parseManifest = go . Aeson.toJSON <=< hush . Toml.parseTomlDoc "wot"
         version <- package .: "version"
         deps <- o .: "dependencies"
         pure (Manifest name version authors (HM.toList deps))
+
+prettyPrintManifest :: Manifest -> Text
+prettyPrintManifest Manifest{..} =
+  Text.unlines $
+    [ "[package]"
+    , "name = " <> show manifestName
+    , "version = " <> show manifestVersion
+    , "authors = [" <> Text.intercalate ", " (map show manifestAuthors) <> "]"
+    , ""
+    , "[dependencies]"
+    ] <> dependencies
+    where
+      dependencies = foreach manifestDependencies $ \(pn, vr) ->
+        pn <> " = " <> show vr
