@@ -10,10 +10,12 @@ import qualified Data.HashMap.Strict as HM
 type Version = Text
 type VersionRange = Text
 type PackageName = Text
+type Author = Text
 
 data Manifest = Manifest
   { manifestName :: PackageName
   , manifestVersion :: Version
+  , manifestAuthors :: [Author]
   , manifestDependencies :: [(PackageName, VersionRange)]
   } deriving (Show)
 
@@ -25,6 +27,7 @@ parseManifest = go . Aeson.toJSON <=< hush . Toml.parseTomlDoc "wot"
       parseMaybe $ withObject "Manifest" $ \o -> do
         package <- o .: "package"
         name <- package .: "name"
+        authors <- package .: "authors"
         version <- package .: "version"
         deps <- o .: "dependencies"
-        pure (Manifest name version (HM.toList deps))
+        pure (Manifest name version authors (HM.toList deps))
