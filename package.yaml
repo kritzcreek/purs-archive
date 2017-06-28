@@ -16,7 +16,12 @@ dependencies:
   - unordered-containers
   - htoml
   - bytestring
+  - directory
+  - filepath
+  - text
+  - http-types
   - aeson
+  - wreq
 
 default-extensions:
   - OverloadedStrings

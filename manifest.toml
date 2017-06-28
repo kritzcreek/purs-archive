@@ -1,6 +1,7 @@
 [package]
-name = "packages"
+name = "prelude"
 version = "1.0.0"
+authors = ["christoph@ps.com"]
 
 [dependencies]
 time = "0.1.12"
