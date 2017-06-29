@@ -1,9 +1,11 @@
-module Archive where
+module Archive (persistManifest, listPackages, createIndex) where
 
 import Protolude
 
 import qualified Data.Text as Text
-import Manifest (Manifest(..), prettyPrintManifest)
+import qualified Codec.Archive.Tar as Tar
+import Manifest (Manifest(..), PackageName, prettyPrintManifest)
+import System.Directory (createDirectoryIfMissing, listDirectory, doesDirectoryExist)
 import System.FilePath ((</>))
 
 dataDirectory :: FilePath
@@ -11,10 +13,14 @@ dataDirectory = "data"
 
 persistManifest :: Manifest -> IO ()
 persistManifest m = do
-  writeFile (dataDirectory </> fileName) (prettyPrintManifest m)
-    where
-      fileName =
-        Text.unpack (manifestName m <> "-" <> manifestVersion m <> ".toml")
+  let dirName = dataDirectory </> Text.unpack (manifestName m)
+  createDirectoryIfMissing True dirName
+  writeFile (dirName </> Text.unpack (manifestVersion m <> ".toml")) (prettyPrintManifest m)
 
-lol :: Text
-lol = "lol"
+listPackages :: IO [PackageName]
+listPackages = map Text.pack <$> listDirectory dataDirectory
+
+createIndex :: IO ()
+createIndex = do
+  whenM (doesDirectoryExist dataDirectory) $ do
+   Tar.create "index.tar" dataDirectory =<< listDirectory dataDirectory

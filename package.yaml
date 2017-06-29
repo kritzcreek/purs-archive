@@ -21,7 +21,9 @@ dependencies:
   - text
   - http-types
   - aeson
+  - tar
   - wreq
+  - lens
 
 default-extensions:
   - OverloadedStrings
