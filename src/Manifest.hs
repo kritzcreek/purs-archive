@@ -4,12 +4,13 @@ module Manifest where
 import Protolude
 import Data.Aeson as Aeson
 import Data.Aeson.Types (parseMaybe)
+import Data.SemVer (Version)
+import qualified Data.SemVer as SemVer
 import qualified Data.Text as Text
 import qualified Text.Toml as Toml
 import qualified Data.HashMap.Strict as HM
 
 -- TODO: LOL
-type Version = Text
 type VersionRange = Text
 type PackageName = Text
 type Author = Text
@@ -30,7 +31,7 @@ parseManifest = go . Aeson.toJSON <=< hush . Toml.parseTomlDoc "wot"
         package <- o .: "package"
         name <- package .: "name"
         authors <- package .: "authors"
-        version <- package .: "version"
+        version <- either (const mzero) pure . SemVer.fromText =<< package .: "version"
         deps <- o .: "dependencies"
         pure (Manifest name version authors (HM.toList deps))
 
@@ -39,7 +40,7 @@ prettyPrintManifest Manifest{..} =
   Text.unlines $
     [ "[package]"
     , "name = " <> show manifestName
-    , "version = " <> show manifestVersion
+    , "version = " <> "\"" <> SemVer.toText manifestVersion <> "\""
     , "authors = [" <> Text.intercalate ", " (map show manifestAuthors) <> "]"
     , ""
     , "[dependencies]"

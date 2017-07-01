@@ -23,6 +23,7 @@ dependencies:
   - aeson
   - tar
   - wreq
+  - semver
   - lens
 
 default-extensions:
