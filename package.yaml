@@ -25,6 +25,12 @@ dependencies:
   - wreq
   - semver
   - lens
+  - persistent
+  - persistent-template
+  - persistent-sqlite
+  - resource-pool
+  - resourcet
+  - monad-logger
 
 default-extensions:
   - OverloadedStrings
