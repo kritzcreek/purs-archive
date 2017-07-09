@@ -11,3 +11,4 @@ cabal.sandbox.config
 /*.sqlite3
 /*.tar
 /result/
+/data.sqlite3*
