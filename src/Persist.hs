@@ -19,4 +19,5 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
       email Text
       password ByteString
       deriving Show
+      Primary email
 |]

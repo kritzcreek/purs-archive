@@ -15,14 +15,14 @@ data RegistrationError
 hashStrength :: Int
 hashStrength = 18
 
-registerUser :: Email -> Password -> SqlPersistM ()
+registerUser :: Email -> Password -> SqlPersistM Bool
 registerUser email password = do
   hashed <- liftIO $ makePassword password hashStrength
   let newUser = User email hashed
-  isUnique <- isNothing <$> checkUnique newUser
+  isUnique <- isNothing <$> selectFirst [UserEmail ==. email] []
   if isUnique
-    then void $ insert newUser
-    else pure ()
+    then insert newUser $> True
+    else pure False
 
 checkUser :: Email -> Password -> SqlPersistM (Maybe Bool)
 checkUser email password = do

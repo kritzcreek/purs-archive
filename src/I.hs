@@ -7,9 +7,9 @@ import Control.Lens ((^.))
 import qualified Codec.Archive.Tar as Tar
 import qualified Network.Wreq as W
 
-import Persist.Sqlite
-import Data.Pool (Pool)
-import Database.Persist.Sqlite
+import qualified Persist.Sqlite as Lite
+import Data.Pool (Pool, destroyAllResources)
+import Database.Persist.Sqlite (SqlBackend)
 import qualified User as User
 
 upload :: IO (W.Response LByteString)
@@ -28,11 +28,16 @@ getIndex = do
   Tar.unpack "result" (Tar.read body)
 
 getPool :: IO (Pool SqlBackend)
-getPool = defaultSqlitePool
+getPool = Lite.defaultSqlitePool
 
-registerUser :: Pool SqlBackend -> Text -> Text -> IO ()
-registerUser pool email pw = runDB pool (User.registerUser email (toS pw))
+migrate :: Pool SqlBackend -> IO ()
+migrate = Lite.migrateSqliteDatabase
+
+registerUser :: Pool SqlBackend -> Text -> Text -> IO Bool
+registerUser pool email pw = Lite.runDB pool (User.registerUser email (toS pw))
 
 checkUser :: Pool SqlBackend -> Text -> Text -> IO (Maybe Bool)
-checkUser pool email pw = runDB pool (User.checkUser email (toS pw))
+checkUser pool email pw = Lite.runDB pool (User.checkUser email (toS pw))
 
+free :: Pool SqlBackend -> IO ()
+free = destroyAllResources
