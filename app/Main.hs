@@ -5,17 +5,29 @@ module Main where
 import Protolude
 import qualified Web.Scotty as Scotty
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
+import Network.Wai.Middleware.HttpAuth (extractBasicAuth)
 import Network.Wai.Parse (fileContent)
 import Archive (persistManifest, listPackages, createIndex)
 import qualified Network.HTTP.Types as HTTP
 import Manifest
+import User (checkUser)
+import Database.Persist.Sqlite (SqlBackend)
+import qualified Persist.Sqlite as Lite
+import Data.Pool (Pool)
 
 main :: IO ()
-main = Scotty.scotty 3000 $ do
+main = do
+  pool <- Lite.defaultSqlitePool
+  app pool
+
+app :: Pool SqlBackend -> IO ()
+app pool = Scotty.scotty 3000 $ do
   Scotty.middleware logStdoutDev
   Scotty.get "/package" $ do
     Scotty.json =<< liftIO listPackages
   Scotty.post "/package" $ do
+    email <- checkAuth
+    traceM (toS email)
     fs <- Scotty.files
     let content = fileContent . snd <$> head fs
     case parseManifest . toS =<< content of
@@ -25,3 +37,14 @@ main = Scotty.scotty 3000 $ do
         liftIO (persistManifest manifest)
   Scotty.get "/createIndex" (liftIO createIndex)
   Scotty.get "/index" (Scotty.file "index.tar")
+  where
+    checkAuth = do
+      auth <- Scotty.header "Authorization"
+      case extractBasicAuth . toS =<< auth of
+        Nothing ->
+          Scotty.status HTTP.unauthorized401 *> Scotty.finish
+        Just (email, pw) -> do
+          authResult <- liftIO $ Lite.runDB pool (checkUser (toS email) pw)
+          if fromMaybe False authResult
+            then pure email
+            else Scotty.status HTTP.unauthorized401 *> Scotty.finish

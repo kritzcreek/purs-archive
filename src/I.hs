@@ -3,7 +3,7 @@ module I where
 -- GHCI helpers
 
 import Protolude hiding (get, put)
-import Control.Lens ((^.))
+import Control.Lens ((^.), (?~))
 import qualified Codec.Archive.Tar as Tar
 import qualified Network.Wreq as W
 
@@ -13,7 +13,9 @@ import Database.Persist.Sqlite (SqlBackend)
 import qualified User as User
 
 upload :: IO (W.Response LByteString)
-upload = W.post "http://localhost:3000/package" (W.partFile "file" "manifest.toml")
+upload = W.postWith opts "http://localhost:3000/package" (W.partFile "file" "manifest.toml")
+  where
+    opts = W.defaults & W.auth ?~ W.basicAuth "creek@gmail.com" "hunter2"
 
 listPackages :: IO (W.Response LByteString)
 listPackages = W.get "http://localhost:3000/package"
