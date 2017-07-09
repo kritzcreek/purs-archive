@@ -1,4 +1,4 @@
-module Persist.SQlite where
+module Persist.Sqlite where
 
 import Protolude
 

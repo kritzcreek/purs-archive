@@ -31,6 +31,7 @@ dependencies:
   - resource-pool
   - resourcet
   - monad-logger
+  - pwstore-fast
 
 default-extensions:
   - OverloadedStrings
