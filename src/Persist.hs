@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
@@ -7,6 +8,7 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE DeriveGeneric              #-}
 module Persist where
 
 import Protolude
@@ -20,4 +22,12 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
       password ByteString
       deriving Show
       Primary email
+  Package
+      name Text
+      owner Text
+      Primary name
+  Version
+      package Text
+      version Text
+      Primary package version
 |]

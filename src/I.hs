@@ -2,15 +2,18 @@ module I where
 
 -- GHCI helpers
 
-import Protolude hiding (get, put)
+import Protolude
+
 import Control.Lens ((^.), (?~))
 import qualified Codec.Archive.Tar as Tar
 import qualified Network.Wreq as W
-
 import qualified Persist.Sqlite as Lite
 import Data.Pool (Pool, destroyAllResources)
 import Database.Persist.Sqlite (SqlBackend)
 import qualified User as User
+
+registerDummy :: Pool SqlBackend -> IO Bool
+registerDummy pool = registerUser pool "creek@gmail.com" "hunter2"
 
 upload :: IO (W.Response LByteString)
 upload = W.postWith opts "http://localhost:3000/package" (W.partFile "file" "manifest.toml")

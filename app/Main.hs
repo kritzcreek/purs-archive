@@ -27,14 +27,13 @@ app pool = Scotty.scotty 3000 $ do
     Scotty.json =<< liftIO listPackages
   Scotty.post "/package" $ do
     email <- checkAuth
-    traceM (toS email)
     fs <- Scotty.files
     let content = fileContent . snd <$> head fs
     case parseManifest . toS =<< content of
       Nothing ->
         Scotty.status HTTP.badRequest400
       Just manifest ->
-        liftIO (persistManifest manifest)
+        liftIO (Lite.runDB pool (persistManifest (toS email) manifest))
   Scotty.get "/createIndex" (liftIO createIndex)
   Scotty.get "/index" (Scotty.file "index.tar")
   where

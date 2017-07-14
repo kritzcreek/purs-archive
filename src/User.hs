@@ -24,6 +24,11 @@ registerUser email password = do
     then insert newUser $> True
     else pure False
 
+registeredUsers :: SqlPersistM [Email]
+registeredUsers = do
+  entities <- selectList [] []
+  pure (map (userEmail . entityVal) entities)
+
 checkUser :: Email -> Password -> SqlPersistM (Maybe Bool)
 checkUser email password = do
   res <- selectFirst [UserEmail ==. email] []

@@ -9,14 +9,42 @@ import Manifest (Manifest(..), PackageName, prettyPrintManifest)
 import System.Directory (createDirectoryIfMissing, listDirectory, doesDirectoryExist)
 import System.FilePath ((</>))
 
+import Persist (EntityField(PackageName), packageOwner, Package(..), Version(..))
+import Database.Persist.Sqlite
+
 dataDirectory :: FilePath
 dataDirectory = "data"
 
-persistManifest :: Manifest -> IO ()
-persistManifest m = do
-  let dirName = dataDirectory </> Text.unpack (manifestName m)
-  createDirectoryIfMissing True dirName
-  writeFile (dirName </> Text.unpack (SemVer.toText (manifestVersion m) <> ".toml")) (prettyPrintManifest m)
+persistManifest :: Text -> Manifest -> SqlPersistM ()
+persistManifest email m = do
+  liftIO saveFile
+  persistPackage
+  where
+    pkgName = manifestName m
+
+    persistPackage = do
+      r <- selectFirst [PackageName ==. pkgName] []
+      case r of
+        Nothing ->
+          createNewPackage
+        Just p ->
+          if packageOwner (entityVal p) /= email then
+            traceM ("Package already taken by: " <> email)
+          else
+            addNewPackageVersion
+      pure ()
+
+    addNewPackageVersion =
+      void (insert (Version pkgName (SemVer.toText (manifestVersion m))))
+
+    createNewPackage = do
+      _ <- insert (Package pkgName email)
+      _ <- insert (Version pkgName (SemVer.toText (manifestVersion m)))
+      pure ()
+    saveFile = do
+      let dirName = dataDirectory </> Text.unpack (manifestName m)
+      createDirectoryIfMissing True dirName
+      writeFile (dirName </> Text.unpack (SemVer.toText (manifestVersion m) <> ".toml")) (prettyPrintManifest m)
 
 listPackages :: IO [PackageName]
 listPackages = map Text.pack <$> listDirectory dataDirectory
