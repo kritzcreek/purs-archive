@@ -1,7 +1,8 @@
 [package]
 name = "array"
 version = "1.0.0"
-authors = ["christoph@ps.com"]
+compiler = ">= 0.11.5 && < 0.12"
+authors = ["christoph@ps.com", "creek@lol.com"]
 
 [dependencies]
 prelude = "0.1.12"

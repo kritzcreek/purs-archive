@@ -18,6 +18,7 @@ type Author = Text
 data Manifest = Manifest
   { manifestName :: PackageName
   , manifestVersion :: Version
+  , manifestCompilerVersion :: VersionRange
   , manifestAuthors :: [Author]
   , manifestDependencies :: [(PackageName, VersionRange)]
   } deriving (Show)
@@ -32,8 +33,9 @@ parseManifest = go . Aeson.toJSON <=< hush . Toml.parseTomlDoc "wot"
         name <- package .: "name"
         authors <- package .: "authors"
         version <- either (const mzero) pure . SemVer.fromText =<< package .: "version"
+        compiler <- package .: "compiler"
         deps <- o .: "dependencies"
-        pure (Manifest name version authors (HM.toList deps))
+        pure (Manifest name version compiler authors (HM.toList deps))
 
 prettyPrintManifest :: Manifest -> Text
 prettyPrintManifest Manifest{..} =
@@ -41,6 +43,7 @@ prettyPrintManifest Manifest{..} =
     [ "[package]"
     , "name = " <> show manifestName
     , "version = " <> "\"" <> SemVer.toText manifestVersion <> "\""
+    , "compiler = " <> show manifestCompilerVersion
     , "authors = [" <> Text.intercalate ", " (map show manifestAuthors) <> "]"
     , ""
     , "[dependencies]"
