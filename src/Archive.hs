@@ -46,8 +46,10 @@ persistManifest email m = do
       createDirectoryIfMissing True dirName
       writeFile (dirName </> Text.unpack (SemVer.toText (manifestVersion m) <> ".toml")) (prettyPrintManifest m)
 
-listPackages :: IO [PackageName]
-listPackages = map Text.pack <$> listDirectory dataDirectory
+listPackages :: SqlPersistM [PackageName]
+listPackages = do
+  packages <- selectList [] []
+  pure (map (packageName . entityVal) packages)
 
 createIndex :: IO ()
 createIndex = do

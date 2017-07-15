@@ -24,7 +24,7 @@ app :: Pool SqlBackend -> IO ()
 app pool = Scotty.scotty 3000 $ do
   Scotty.middleware logStdoutDev
   Scotty.get "/package" $ do
-    Scotty.json =<< liftIO listPackages
+    Scotty.json =<< liftIO (Lite.runDB pool listPackages)
   Scotty.post "/package" $ do
     email <- checkAuth
     fs <- Scotty.files
