@@ -34,7 +34,7 @@ parseManifest = go . Aeson.toJSON <=< hush . Toml.parseTomlDoc "wot"
         authors <- package .: "authors"
         version <- either (const mzero) pure . SemVer.fromText =<< package .: "version"
         compiler <- package .: "compiler"
-        deps <- o .: "dependencies"
+        deps <- o .:? "dependencies" .!= HM.empty
         pure (Manifest name version compiler authors (HM.toList deps))
 
 prettyPrintManifest :: Manifest -> Text
