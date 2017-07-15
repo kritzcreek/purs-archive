@@ -7,7 +7,7 @@ import qualified Web.Scotty as Scotty
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Network.Wai.Middleware.HttpAuth (extractBasicAuth)
 import Network.Wai.Parse (fileContent)
-import Archive (persistManifest, listPackages, createIndex)
+import Archive (persistManifest, listPackages, createIndex, PersistError(..))
 import qualified Network.HTTP.Types as HTTP
 import Manifest
 import User (checkUser)
@@ -32,8 +32,16 @@ app pool = Scotty.scotty 3000 $ do
     case parseManifest . toS =<< content of
       Nothing ->
         Scotty.status HTTP.badRequest400
-      Just manifest ->
-        liftIO (Lite.runDB pool (persistManifest (toS email) manifest))
+      Just manifest -> do
+        mErr <- liftIO (Lite.runDB pool (persistManifest (toS email) manifest))
+        case mErr of
+          Just PackageAlreadyTaken -> do
+            Scotty.status HTTP.conflict409
+            Scotty.text "Package name was already taken."
+          Just VersionAlreadyUploaded -> do
+            Scotty.status HTTP.conflict409
+            Scotty.text "Version was already uploaded."
+          _ -> pure ()
   Scotty.get "/createIndex" (liftIO createIndex)
   Scotty.get "/index" (Scotty.file "index.tar")
   where

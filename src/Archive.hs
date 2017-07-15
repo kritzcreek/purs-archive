@@ -1,4 +1,9 @@
-module Archive (persistManifest, listPackages, createIndex) where
+module Archive
+  ( persistManifest
+  , listPackages
+  , createIndex
+  , PersistError(..)
+  ) where
 
 import Protolude
 
@@ -9,38 +14,42 @@ import Manifest (Manifest(..), PackageName, prettyPrintManifest)
 import System.Directory (createDirectoryIfMissing, listDirectory, doesDirectoryExist)
 import System.FilePath ((</>))
 
-import Persist (EntityField(PackageName), packageOwner, Package(..), Version(..))
+import Persist (EntityField(..), packageOwner, Package(..), Version(..))
 import Database.Persist.Sqlite
 
 dataDirectory :: FilePath
 dataDirectory = "data"
 
-persistManifest :: Text -> Manifest -> SqlPersistM ()
+data PersistError = PackageAlreadyTaken | VersionAlreadyUploaded
+
+persistManifest :: Text -> Manifest -> SqlPersistM (Maybe PersistError)
 persistManifest email m = do
   liftIO saveFile
   persistPackage
   where
     pkgName = manifestName m
 
+    pkgVersion = SemVer.toText (manifestVersion m)
+
     persistPackage = do
       r <- selectFirst [PackageName ==. pkgName] []
       case r of
         Nothing ->
-          createNewPackage
-        Just p ->
-          if packageOwner (entityVal p) /= email then
-            traceM ("Package already taken by: " <> email)
-          else
-            addNewPackageVersion
-      pure ()
+          createNewPackage $> Nothing
+        Just p | packageOwner (entityVal p) /= email -> pure (Just PackageAlreadyTaken)
+        Just _ -> do
+          versionTaken <- isJust <$> selectFirst [ VersionPackage ==. pkgName, VersionVersion ==. pkgVersion ] []
+          if versionTaken
+            then pure (Just VersionAlreadyUploaded)
+            else addNewPackageVersion $> Nothing
 
     addNewPackageVersion =
-      void (insert (Version pkgName (SemVer.toText (manifestVersion m))))
+      void (insert (Version pkgName pkgVersion))
 
     createNewPackage = do
       _ <- insert (Package pkgName email)
-      _ <- insert (Version pkgName (SemVer.toText (manifestVersion m)))
-      pure ()
+      insert (Version pkgName (SemVer.toText (manifestVersion m)))
+
     saveFile = do
       let dirName = dataDirectory </> Text.unpack (manifestName m)
       createDirectoryIfMissing True dirName
