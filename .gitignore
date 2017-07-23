@@ -7,3 +7,8 @@ cabal.sandbox.config
 *.swp
 *.keter
 /purs-archive.cabal
+/data/
+/*.sqlite3
+/*.tar
+/result/
+/data.sqlite3*

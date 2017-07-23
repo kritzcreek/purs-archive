@@ -16,7 +16,22 @@ dependencies:
   - unordered-containers
   - htoml
   - bytestring
+  - directory
+  - filepath
+  - text
+  - http-types
   - aeson
+  - tar
+  - wreq
+  - semver
+  - lens
+  - persistent
+  - persistent-template
+  - persistent-sqlite
+  - resource-pool
+  - resourcet
+  - monad-logger
+  - pwstore-fast
 
 default-extensions:
   - OverloadedStrings

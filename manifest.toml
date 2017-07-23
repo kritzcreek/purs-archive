@@ -1,6 +1,9 @@
 [package]
-name = "packages"
+name = "array"
 version = "1.0.0"
+compiler = ">= 0.11.5 && < 0.12"
+authors = ["christoph@ps.com", "creek@lol.com"]
 
 [dependencies]
-time = "0.1.12"
+prelude = "0.1.12"
+maybe = "2.0.1"
