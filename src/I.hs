@@ -67,20 +67,22 @@ forK xs f = do
 
 convertAllBowers :: IO ()
 convertAllBowers = do
-  forK (listDirectory "purescript") $ \package ->
-    forK (listDirectory ("purescript" </> package)) $ \version -> do
-      convertBowerToToml ("purescript" </> package </> version </> "bower.json") (toS (drop 1 version))
-      renameFile
-        ("purescript" </> package </> version </> "bower.json.toml")
-        ("purescript" </> package </> version </> "manifest.toml")
+  forK (listDirectory "bowerfiles") $ \package -> do
+    forK (listDirectory ("bowerfiles" </> package)) $ \version -> do
+      -- traceShowM (package, version)
+      when (isRight (SemVer.fromText (toS (drop 1 version)))) $ do
+        whenM (convertBowerToToml ("bowerfiles" </> package </> version </> "bower.json") (toS (drop 1 version))) $
+          renameFile
+            ("bowerfiles" </> package </> version </> "bower.json.toml")
+            ("bowerfiles" </> package </> version </> "manifest.toml")
 
-convertBowerToToml :: FilePath -> Text -> IO ()
+convertBowerToToml :: FilePath -> Text -> IO Bool
 convertBowerToToml fp version' = do
   bower <- readFile fp
-  let decoded = decodeManifest =<< note "wat" (A.decode (toS bower))
+  let decoded = decodeManifest =<< note "Invalid json" (A.decode (toS bower))
   case decoded of
-    Right m -> writeFile (fp <> ".toml") (prettyPrintManifest m)
-    Left err -> panic (toS err)
+    Right m -> writeFile (fp <> ".toml") (prettyPrintManifest m) $> True
+    Left err -> putText ("Failed to decode manifest: " <> show err) $> False
   where
     decodeManifest =
       A.parseEither $ A.withObject "Manifest" $ \package -> do
