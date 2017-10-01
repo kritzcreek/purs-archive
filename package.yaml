@@ -12,8 +12,12 @@ extra-source-files:
 dependencies:
   - base >= 4.7 && < 5
   - scotty
+  - github
   - protolude
+  - vector
   - unordered-containers
+  - base64-bytestring
+  - async
   - htoml
   - bytestring
   - directory
