@@ -5,7 +5,7 @@ module Archive
   , PersistError(..)
   ) where
 
-import Protolude
+import Protolude hiding (packageName)
 
 import qualified Data.Text as Text
 import qualified Data.SemVer as SemVer

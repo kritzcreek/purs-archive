@@ -11,7 +11,7 @@
 {-# LANGUAGE DeriveGeneric              #-}
 module Persist where
 
-import Protolude
+import Protolude hiding (packageName)
 
 -- import Database.Persist.Sqlite
 import Database.Persist.TH

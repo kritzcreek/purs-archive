@@ -73,7 +73,7 @@ convertBowerToToml fp version' = do
   let decoded = decodeManifest =<< note "wat" (A.decode (toS bower))
   case decoded of
     Right m -> writeFile (fp <> ".toml") (prettyPrintManifest m)
-    Left err -> error (toS err)
+    Left err -> panic (toS err)
   where
     decodeManifest =
       A.parseEither $ A.withObject "Manifest" $ \package -> do
