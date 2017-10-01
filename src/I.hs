@@ -100,7 +100,10 @@ downloadZeBowerFiles =
     forConcurrently_ tags $ \tag ->
       unlessM (doesDirectoryExist (mkBowerPath (snd repo) tag)) $ do
         putText ("Downloading bower file for: " <> show repo <> show (GH.tagName tag))
-        writeBowerJson repo tag =<< decodeContent <$> downloadBowerJson repo tag
+        bowerJson <- downloadBowerJson repo tag
+        case bowerJson of
+          Just bj -> writeBowerJson repo tag (decodeContent bj)
+          Nothing -> pure ()
 
 ---------------
 -- | Customize these:
@@ -194,12 +197,14 @@ fetchTags (owner, repo) = do
     Left err -> panic ("Failed to fetch tags for: " <> GH.untagName owner <> "/" <> GH.untagName repo <> " with: " <> show err)
     Right tags' -> pure tags'
 
-downloadBowerJson :: (GH.Name GH.Owner, GH.Name GH.Repo) -> GH.Tag -> IO GH.ContentFileData
+downloadBowerJson :: (GH.Name GH.Owner, GH.Name GH.Repo) -> GH.Tag -> IO (Maybe GH.ContentFileData)
 downloadBowerJson (owner, repo) tag = do
   content <- GH.contentsFor' (Just oauth) owner repo "bower.json" (Just (GH.tagName tag))
   case content of
-    Left err -> panic ("Failed to bower.json for: " <> GH.untagName owner <> "/" <> GH.untagName repo <> ":" <> GH.tagName tag <> " with: " <> show err)
-    Right (GH.ContentFile content') -> pure content'
+    Left err -> do
+      putText ("Failed to bower.json for: " <> GH.untagName owner <> "/" <> GH.untagName repo <> ":" <> GH.tagName tag <> " with: " <> show err)
+      pure Nothing
+    Right (GH.ContentFile content') -> pure (Just content')
     _ -> panic "wot? bower.json was a directory"
 
 decodeContent :: GH.ContentFileData -> Text
