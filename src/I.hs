@@ -19,18 +19,20 @@ import           Database.Persist.Sqlite (SqlBackend)
 import qualified GitHub as GH
 import qualified GitHub.Endpoints.Repos as GH
 import qualified GitHub.Endpoints.Repos.Contents as GH
-import           Manifest
 import qualified Network.Wreq as W
 import qualified Persist.Sqlite as Lite
 import           System.Directory
 import           System.FilePath
+
+import           Manifest
 import qualified User as User
+import qualified Archive as Archive
 
 registerDummy :: Pool SqlBackend -> IO Bool
 registerDummy pool = registerUser pool "creek@gmail.com" "hunter2"
 
-upload :: IO (W.Response LByteString)
-upload = W.postWith opts "http://localhost:3000/package" (W.partFile "file" "manifest.toml")
+upload :: FilePath -> IO (W.Response LByteString)
+upload fp = W.postWith opts "http://localhost:3000/package" (W.partFile "file" fp)
   where
     opts = W.defaults & W.auth ?~ W.basicAuth "creek@gmail.com" "hunter2"
 
@@ -55,11 +57,27 @@ migrate = Lite.migrateSqliteDatabase
 registerUser :: Pool SqlBackend -> Text -> Text -> IO Bool
 registerUser pool email pw = Lite.runDB pool (User.registerUser email (toS pw))
 
+insertManifest :: Pool SqlBackend -> Text -> Manifest -> IO ()
+insertManifest pool email m = void $ Lite.runDB pool (Archive.persistManifest email m)
+
 checkUser :: Pool SqlBackend -> Text -> Text -> IO (Maybe Bool)
 checkUser pool email pw = Lite.runDB pool (User.checkUser email (toS pw))
 
 free :: Pool SqlBackend -> IO ()
 free = destroyAllResources
+
+insertAllBowerFilesIntoDatabase :: IO ()
+insertAllBowerFilesIntoDatabase = do
+  pool <- getPool
+  forManifestFiles (\_ manifest -> insertManifest pool "christoph@slamdata.com" manifest)
+
+forManifestFiles :: (FilePath -> Manifest -> IO a) -> IO ()
+forManifestFiles f =
+  forK (listDirectory "bowerfiles") $ \package -> do
+    forK (listDirectory ("bowerfiles" </> package)) $ \version -> do
+      let fp = "bowerfiles" </> package </> version </> "manifest.toml"
+      whenM (doesFileExist fp) $ do
+        parseManifest <$> readFile fp >>= traverse_ (f fp)
 
 forK :: (Foldable t, Monad m) => m (t a) -> (a -> m b) -> m ()
 forK xs f = do
@@ -71,6 +89,7 @@ convertAllBowers = do
     forK (listDirectory ("bowerfiles" </> package)) $ \version -> do
       -- traceShowM (package, version)
       when (isRight (SemVer.fromText (toS (drop 1 version)))) $ do
+        putText ("Converting " <> toS package <> ":" <> toS version)
         whenM (convertBowerToToml ("bowerfiles" </> package </> version </> "bower.json") (toS (drop 1 version))) $
           renameFile
             ("bowerfiles" </> package </> version </> "bower.json.toml")
@@ -111,7 +130,7 @@ downloadZeBowerFiles =
 -- | Customize these:
 ---------------
 oauth :: GH.Auth
-oauth = GH.OAuth ""
+oauth = GH.OAuth "bceaad776970506b44d70ad91fcb3e72d0af4129"
 
 repos :: [(GH.Name GH.Owner, GH.Name GH.Repo)]
 repos = map (bimap mkOwner (mkRepo . (<>) "purescript-"))

@@ -13,7 +13,6 @@ module Persist where
 
 import Protolude hiding (packageName)
 
--- import Database.Persist.Sqlite
 import Database.Persist.TH
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
